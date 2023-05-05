@@ -20,14 +20,13 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
-	"go.opentelemetry.io/otel/metric/instrument"
 )
 
 func registerMetrics(db *sql.DB, meter metric.Meter, poolName string) (metric.Registration, error) {
 	usage, err := meter.Int64ObservableUpDownCounter(
 		"db.client.connections.usage",
-		instrument.WithUnit("{connection}"),
-		instrument.WithDescription("The number of connections that are currently in state described by the state attribute"),
+		metric.WithUnit("{connection}"),
+		metric.WithDescription("The number of connections that are currently in state described by the state attribute"),
 	)
 	if err != nil {
 		return nil, err
@@ -35,8 +34,8 @@ func registerMetrics(db *sql.DB, meter metric.Meter, poolName string) (metric.Re
 
 	max, err := meter.Int64ObservableUpDownCounter(
 		"db.client.connections.max",
-		instrument.WithUnit("{connection}"),
-		instrument.WithDescription("The maximum number of open connections allowed"),
+		metric.WithUnit("{connection}"),
+		metric.WithDescription("The maximum number of open connections allowed"),
 	)
 	if err != nil {
 		return nil, err
@@ -44,8 +43,8 @@ func registerMetrics(db *sql.DB, meter metric.Meter, poolName string) (metric.Re
 
 	waitTime, err := meter.Int64ObservableUpDownCounter(
 		"db.client.connections.wait_time",
-		instrument.WithUnit("ms"),
-		instrument.WithDescription("The time it took to obtain an open connection from the pool"),
+		metric.WithUnit("ms"),
+		metric.WithDescription("The time it took to obtain an open connection from the pool"),
 	)
 	if err != nil {
 		return nil, err
@@ -59,10 +58,10 @@ func registerMetrics(db *sql.DB, meter metric.Meter, poolName string) (metric.Re
 
 			stats := db.Stats()
 
-			o.ObserveInt64(usage, int64(stats.InUse), poolAttr, usedAttr)
-			o.ObserveInt64(usage, int64(stats.Idle), poolAttr, idleAttr)
-			o.ObserveInt64(max, int64(stats.MaxOpenConnections), poolAttr)
-			o.ObserveInt64(waitTime, int64(stats.WaitDuration), poolAttr)
+			o.ObserveInt64(usage, int64(stats.InUse), metric.WithAttributes(poolAttr, usedAttr))
+			o.ObserveInt64(usage, int64(stats.Idle), metric.WithAttributes(poolAttr, idleAttr))
+			o.ObserveInt64(max, int64(stats.MaxOpenConnections), metric.WithAttributes(poolAttr))
+			o.ObserveInt64(waitTime, int64(stats.WaitDuration), metric.WithAttributes(poolAttr))
 
 			return nil
 		},
